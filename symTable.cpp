@@ -54,6 +54,7 @@ vector<string> SymTable::getSymbol(string name) {
     }
 
     vector<string> noSymbol;
+    noSymbol.push_back("dne");
     return noSymbol;
 }
 
@@ -81,7 +82,8 @@ void SymTable::init(string name) {
 
 bool SymTable::isInit(string name) {
     vector<string> symbol = getSymbol(name);
-
+    
+    if (symbol.size() == 1) return false; // DNE case for getSymbol
     return symbol[INITIALIZED] == "YES";
 }
 
