@@ -93,7 +93,7 @@ map<int, map<string, srAction>> readSLRTable(string filename) {
 
     string first;
     getline(inFile, first);
-    stringstream inFirst(first);
+    stringstream inFirst(first + ",");
 
     vector<string> symbolOrder;
     string currentSym = "";
@@ -114,7 +114,8 @@ map<int, map<string, srAction>> readSLRTable(string filename) {
     while (getline(inFile, line)) {
         map<string, srAction> tableLine;
         string indexString;
-        stringstream inLine(line);
+        stringstream inLine(line + ",");
+
         while (inLine >> holder) {
             if (holder == ',') break;
             indexString += holder;
@@ -123,7 +124,7 @@ map<int, map<string, srAction>> readSLRTable(string filename) {
         currentSym = "";
         int symbolIndex = 1;
         while (inLine >> holder) {
-            if (holder == ',') {
+            if (holder == ',' || holder == '\n') {
                 srAction newAction;
                 if (currentSym == "") {
                     newAction.status = false;
