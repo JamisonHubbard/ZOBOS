@@ -419,17 +419,17 @@ void Grammar::generateLL1Table() {
         for (uint i = 0; i < terminals.size() + 1; ++i) {
             columns.push_back(-1);
         }
-        ll1_table.insert(pair<string, vector<int>>(nt, columns));
+        ll1_table.insert({nt, columns});
     }
 
     // map each terminal to an index for the columns
     // $ will always be last
     int indexCount = 0;
     for (string t : terminals) {
-        ll1_index.insert(pair<string, int>(t, indexCount));
+        ll1_index.insert({t, indexCount});
         ++indexCount;
     }
-    ll1_index.insert(pair<string, int>("$", indexCount));
+    ll1_index.insert({"$", indexCount});
 
     
     // for each rule, get its predict set
@@ -463,6 +463,7 @@ void Grammar::print() {
         cout << endl;
     }
 }
+
 void Grammar::report() {
     // print cfg
     print();
