@@ -15,8 +15,6 @@ void SymTable::openScope() {
 }
 
 void SymTable::closeScope() {
-    --currentScope;
-
     vector<string> currentVars;
     for (pair<string, vector<string>> symbol : table) {
         if (symbol.second[1] == to_string(currentScope)) {
@@ -35,6 +33,8 @@ void SymTable::closeScope() {
             table.erase(mit);
         }
     }
+
+    --currentScope;
 }
 
 Error SymTable::enterSymbol(string name, string type) {
@@ -52,7 +52,10 @@ Error SymTable::enterSymbol(string name, string type) {
             return revar;
         }
         // if not in current scope
-        string newName = name + "XX";
+        string newName = name;
+        for (int i = 0; i < stoi(table[name][1]); ++i) {
+            newName += "X";
+        }
         table[newName] = table[name];
         vector<string> newData;
         newData.push_back(type);
@@ -66,6 +69,7 @@ Error SymTable::enterSymbol(string name, string type) {
     vector<string> newData;
     newData.push_back(type);
     newData.push_back(to_string(currentScope));
+    newData.push_back("");
     newData.push_back("");
     table[name] = newData;
 
@@ -91,3 +95,24 @@ bool SymTable::declaredLocally(string name) {
     // if exists
     return true;
 }
+
+void SymTable::init(string name) {
+    if (table.find(name) != table.end()) {
+        vector<string> data = table[name];
+        data[3] = "YES";
+        table[name] = data;
+    }
+}
+
+bool SymTable::isInit(string name) {
+    if (table.find(name) != table.end()) {
+        string initString = table[name][3];
+        if (initString == "YES") return true;
+    }
+
+    return false;
+}
+
+int SymTable::getCurrentScope() {return currentScope;}
+
+map<string, vector<string>> SymTable::getTable() {return table;}

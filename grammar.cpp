@@ -886,3 +886,626 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
 
     return finalNode;
 }
+
+vector<Error> Grammar::semanticChecks(Node* head, string fileDump) {
+    SymTable symtable;
+    vector<Error> allErrors = recursiveCheck(head, symtable, fileDump);
+    return allErrors;
+}
+
+vector<Error> Grammar::recursiveCheck(Node* current, SymTable &symtable, string fileDump) {
+    string nodeType = current->getID();
+    vector<Error> currentErrors;
+
+    if (nodeType == "BRACESTMTS") {
+        vector<Error> braceErrors = braceStmt(current, symtable);
+        for (Error e : braceErrors) currentErrors.push_back(e);
+    }
+    else if (nodeType == "DECLLIST") {
+        vector<Error> declErrors = declStmt(current, symtable);
+        for (Error e : declErrors) currentErrors.push_back(e);
+    }
+    else if (nodeType == "ASSIGN") {
+        vector<Error> assignErrors = assignStmt(current, symtable);
+        for (Error e : assignErrors) currentErrors.push_back(e);
+    }
+    else if (nodeType == "IF") {
+        vector<Error> ifErrors = ifStmt(current, symtable);
+        for (Error e : ifErrors) currentErrors.push_back(e);
+    }
+    else if (nodeType == "IFELSE") {
+        vector<Error> ifElseErrors = ifElseStmt(current, symtable);
+        for (Error e : ifElseErrors) currentErrors.push_back(e);
+    }
+    else if (nodeType == "WHILE") {
+        vector<Error> whileErrors = whileStmt(current, symtable);
+        for (Error e : whileErrors) currentErrors.push_back(e);
+    }
+    else if (nodeType == "EMIT") {
+        vector<Error> emitErrors = emitStmt(current, symtable, fileDump);
+        for (Error e : emitErrors) currentErrors.push_back(e);
+    }
+    else {
+        for (Node* child : current->getEdges()) {
+            vector<Error> childErrors = recursiveCheck(child, symtable);
+            for (Error e : childErrors) currentErrors.push_back(e);
+        }
+    }
+}
+
+vector<Error> Grammar::braceStmt(Node* current, SymTable &symtable) {
+    symtable.openScope();
+    vector<Error> braceErrors;
+    for (Node* child : current->getEdges()) {
+        vector<Error> childErrors = recursiveCheck(child, symtable);
+        for (Error e : childErrors) braceErrors.push_back(e);
+    }
+    symtable.closeScope();
+    return braceErrors;
+}
+
+vector<Error> Grammar::declStmt(Node* current, SymTable &symtable) {
+    // Possible ERRORs
+    // ERROR::REVAR - comes from declIdStmt() call
+
+    vector<Error> declErrors;
+
+    // left child contains type
+    string type = current->getEdges()[0]->getID();
+
+    // remaining children are DECLID nodes
+    for (int i = 1; i < current->getEdges().size(); ++i) {
+        vector<Error> declIdErrors = declIdStmt(current->getEdges()[i], symtable, type);
+        for (Error e : declIdErrors) declErrors.push_back(e);
+    }
+
+    return declErrors;
+}
+
+vector<Error> Grammar::declIdStmt(Node* current, SymTable &symtable, string type) {
+    // Possible ERRORs
+    // ERROR::REVAR - comes from symtable enterSymbol()
+    
+    vector<Error> declIdErrors;
+    
+    // if child is a variable
+    if (current->getEdges()[0]->getID() == "id") {
+        string name = current->getEdges()[0]->getVal();
+        Error newError = symtable.enterSymbol(name, type);
+        if (newError.type != Error::ErrorType::VOID) declIdErrors.push_back(newError);
+    }
+
+    // else for assign statement
+    if (current->getEdges()[0]->getID() == "assign") {
+        vector<Error> newErrors = assignStmt(current->getEdges()[0], symtable, type);
+        for (Error e : newErrors) declIdErrors.push_back(e);
+    }
+
+    return declIdErrors;
+
+}
+
+// this assign function is for non-declarative assignments
+vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
+    // Possible ERRORs
+    // ERROR::NOVAR - comes from variables referenced not in symtable
+    // ERROR::CONV - comes from incorrect types being assigned
+    // WARN::UNINIT - comes from an uninitialized value on rhs
+    // WARN::CONST - comes from lhs being a const type
+
+    Error noVar;
+    noVar.type = Error::ErrorType::ERROR;
+    noVar.id = Error::ErrorID::NOVAR;
+
+    vector<Error> assignErrors;
+
+    Node* lhs = current->getEdges()[0];
+    Node* rhs = current->getEdges()[1];
+
+    // resolve lhs's type
+    string leftType;
+
+    // lhs is always a single variable
+    vector<string> varInfo = symtable.getSymbol(lhs->getVal());
+    // if variable does not exist in symbol table
+    if (varInfo[0] == "dne") {
+        assignErrors.push_back(noVar);
+    }
+    else {
+        leftType = varInfo[0];
+    }
+
+    // check if lhs is a const type
+    if (leftType == "const bool" ||
+        leftType == "const int" ||
+        leftType == "const float")
+    {
+        Error constError;
+        constError.type = Error::ErrorType::WARN;
+        constError.id = Error::ErrorID::CONST;
+        assignErrors.push_back(constError);
+    }
+
+    // resolve rhs's type
+    string rhsType;
+
+    // if rhs is a single value or variable
+    if (rhs->getEdges().size() == 0) {
+        // rhs is a variable
+        if (rhs->getID() == "id") {
+            vector<string> varInfo = symtable.getSymbol(rhs->getVal());
+            if (varInfo[0] == "dne") {
+                assignErrors.push_back(noVar);
+            }
+            else {
+                rhsType = varInfo[0];
+            }
+
+            // check if rhs has been initialized (since this is a
+            // non-declarative assignment function)
+            if (!symtable.isInit(rhs->getVal())) {
+                Error uninit;
+                uninit.type = Error::ErrorType::WARN;
+                uninit.id = Error::ErrorID::UNINIT;
+
+                assignErrors.push_back(uninit);
+            }
+        }
+        // rhs is a value
+        else {
+            string typeVal = rhs->getID();
+            rhsType = typeVal.substr(typeVal.length()-4);
+        }
+    }
+    // rhs is an expr or assignment
+    else {
+        // expr statement
+        if (isOperator(current->getEdges()[1]->getID()) != "NO") {
+            vector<Error> exprErrors = exprStmt(current->getEdges()[1], symtable, rhsType);
+            for (Error e : exprErrors) assignErrors.push_back(e);
+        }
+        // assign statement
+        if (current->getEdges()[1]->getID() == "assign") {
+            vector<Error> subAssignErrors = assignStmt(current->getEdges()[1], symtable, type);
+            for (Error e : subAssignErrors) assignErrors.push_back(e);
+            rhsType = type;
+        }
+    }
+
+    Error convError;
+    convError.type = Error::ErrorType::ERROR;
+    convError.id = Error::ErrorID::CONV;
+    if (type != rhsType) {
+        // check type conversions allowed
+        if (type == "int") {
+            if (rhsType == "string" ||
+                rhsType == "float" ||
+                rhsType == "bool") 
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+        else if (type == "float") {
+            if (rhsType == "int" ||
+                rhsType == "bool" ||
+                rhsType == "string")
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+        else if (type == "bool") {
+            if (rhsType == "float" ||
+                rhsType == "string")
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+        else if (type == "int") {
+            if (rhsType == "bool" ||
+                rhsType == "string") 
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+    }
+
+    return assignErrors;
+}
+
+// this assign function is for declarative assignments
+vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable, string type) {
+    // Possible ERRORs
+    // ERROR::NOVAR - comes from a rhs variable not existing
+    // ERROR::CONV - comes from comparing types of lhs and rhs below
+    // WARN::REVAR - comes from symtable enterSymbol()
+
+    Error noVar;
+    noVar.type = Error::ErrorType::ERROR;
+    noVar.id = Error::ErrorID::NOVAR;
+    
+    vector<Error> assignErrors;
+    
+    // left child is name
+    string name = current->getEdges()[0]->getVal();
+    Error newError = symtable.enterSymbol(name, type);
+    symtable.init(name);
+    if (newError.type != Error::ErrorType::VOID) assignErrors.push_back(newError);
+
+    // check for conversion error
+
+    string rhsType;
+    // rhs is a single variable or value
+    if (current->getEdges()[1]->getEdges().size() == 0) {
+        // rhs is a value of a some type
+        if (current->getEdges()[1]->getID() != "id") {
+            string typeVal = current->getEdges()[1]->getID();
+            rhsType = typeVal.substr(0, typeVal.length() - 4);
+        }
+        // else rhs is a variable
+        else {
+            string varName = current->getEdges()[1]->getVal();
+            vector<string> varInfo = symtable.getSymbol(varName)
+            if (varInfo[0] == "dne") {
+                assignErrors.push_back(noVar);
+            }
+            else {
+                rightType = varInfo[0];
+            }
+        }
+    }
+    // rhs is an expr or assign statement
+    else {
+        // expr statement
+        if (isOperator(current->getEdges()[1]->getID()) != "NO") {
+            vector<Error> exprErrors = exprStmt(current->getEdges()[1], symtable, rhsType);
+            for (Error e : exprErrors) assignErrors.push_back(e);
+        }
+        // assign statement
+        if (current->getEdges()[1]->getID() == "assign") {
+            vector<Error> subAssignErrors = assignStmt(current->getEdges()[1], symtable, type);
+            for (Error e : subAssignErrors) assignErrors.push_back(e);
+            rhsType = type;
+        }
+    }
+    Error convError;
+    convError.type = Error::ErrorType::ERROR;
+    convError.id = Error::ErrorID::CONV;
+    if (type != rhsType) {
+        // check type conversions allowed
+        if (type == "int") {
+            if (rhsType == "string" ||
+                rhsType == "float" ||
+                rhsType == "bool") 
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+        else if (type == "float") {
+            if (rhsType == "int" ||
+                rhsType == "bool" ||
+                rhsType == "string")
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+        else if (type == "bool") {
+            if (rhsType == "float" ||
+                rhsType == "string")
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+        else if (type == "int") {
+            if (rhsType == "bool" ||
+                rhsType == "string") 
+            {
+                assignErrors.push_back(convError);
+            }
+        }
+    }
+
+    return assignErrors;
+}
+
+vector<Error> Grammar::exprStmt(Node* current, SymTable &symtable, string &type) {
+    // Possible ERRORs
+    // ERROR::NOVAR - comes from variable being called that doesn't exist
+    // ERROR::EXPR - comes from wrong types for a given operator
+    // WARN::UNINIT - comes from using uninitialized variables
+
+    Error noVar;
+    Error uninit;
+    noVar.type = Error::ErrorType::ERROR;
+    noVar.id = Error::ErrorID::NOVAR;
+    uninit.type = Error::ErrorType::WARN;
+    uninit.id = Error::ErrorID::UNINIT;
+    
+    vector<Error> exprErrors;
+    
+    // identify lhs and rhs
+    Node* lhs = current->getEdges()[0];
+    Node* rhs = current->getEdges()[1];
+
+    // lhs is an expr
+    string leftType;
+    if (isOperator(lhs->getID()) != "NO") {
+        vector<Error> leftErrors = exprStmt(lhs, symtable, leftType);
+        for (Error e : leftErrors) exprErrors.push_back(e);
+    }
+    // lhs is a variable
+    else if (lhs->getID() == "id") {
+        vector<string> varInfo = symtable.getSymbol(lhs->getVal());
+        if (varInfo[0] == "dne") {
+            exprErrors.push_back(noVar);
+        }
+        else {
+            leftType = varInfo[0];
+        }
+
+        // check if lhs is initialized
+        if (!symtable.isInit(lhs->getVal())) {
+            exprErrors.push_back(uninit);
+        }
+    }
+    // lhs is a value
+    else {
+        string typeVal = lhs->getID();
+        leftType = typeVal.substr(0, typeVal.length()-4);
+    }
+
+    // rhs is an expr
+    string rightType;
+    if (isOperator(rhs->getID()) != "NO") {
+        vector<Error> rightErrors = exprStmt(rhs, symtable, rightType);
+        for (Error e : rightErrors) exprErrors.push_back(e);
+    }
+    // rhs is a variable
+    else if (rhs->getID() == "id") {
+        vector<string> varInfo = symtable.getSymbol(rhs->getVal());
+        if (varInfo[0] == "dne") {
+            exprErrors.push_back(noVar);
+        }
+        else {
+            rightType = varInfo[0];
+        }
+
+        // check if rhs is initialized
+        if (!symtable.isInit(rhs->getVal())) {
+            exprErrors.push_back(uninit);
+        }
+    }
+    // rhs is a value
+    else {
+        string typeVal = rhs->getID();
+        rightType = typeVal.substr(0, typeVal.length()-4);
+    }
+
+    // check typing
+    string currentOp = current->getID();
+    Error convError;
+    convError.type = Error::ErrorType::ERROR;
+    convError.id = Error::ErrorID::EXPR;
+    if (isOperator(currentOp) != "NO") {
+        // type restrictions
+        if (leftType == "string" ||
+            leftType == "bool" ||
+            rightType == "string" ||
+            rightType == "bool") 
+        {
+            exprErrors.push_back(convError);
+        }
+    }
+    if (currentOp == "mod") {
+        // type restrictions
+        if (leftType != "int" ||
+            rightType != "int")
+        {
+            exprErrors.push_back(convError);
+        }
+    }
+    else if (currentOp == "compl") {
+        // type restrictions
+        if (rightType != "int") {
+            exprErrors.push_back(convError);
+        }
+    }
+    else if (currentOp == "not") {
+        // type restrictions
+        if (rightType != "bool") {
+            exprErrors.push_back(convError);
+        }
+    }
+
+    // determine resultant type
+    if (leftType == "int") {
+        if (isOperator(currentOp) == "PLUS" ||
+            isOperator(currentOp) == "TIMES")
+        {
+            type = rightType;
+        }
+        else if (isOperator(currentOp) == "BOOLS") {
+            type = "bool";
+        }
+        else if (isOperator(currentOp) == "UNARY" &&
+                 rightType == "int")
+        {
+            type = "int";
+        }
+    }
+    else if (leftType == "float") {
+        if (isOperator(currentOp) == "PLUS" ||
+            isOperator(currentOp) == "TIMES")
+        {
+            type = "float";
+        }
+        else if (isOperator(currentOp) == "BOOLS") {
+            type = "bool";
+        }
+        else if (isOperator(currentOp) == "UNARY" &&
+                 rightType == "float")
+        {
+            type = "float";
+        }
+    }
+
+    return exprErrors;
+}
+
+vector<Error> Grammar::ifStmt(Node* current, SymTable &symtable) {
+    vector<Error> ifErrors;
+
+    // lhs is a boolean expr, rhs is a brace statement
+    Node* predicate = current->getEdges()[0];
+    Node* body = current->getEdges()[1];
+
+    vector<Error> predicateErrors = exprStmt(predicate, symtable);
+    for (Error e : predicateErrors) ifErrors.push_back(e);
+
+    vector<Error> bodyErrors = braceStmt(body, symtable);
+    for (Error e : bodyErrors) ifErrors.push_back(e);
+
+    return ifErrors;
+}
+
+vector<Error> Grammar::ifElseStmt(Node* current, SymTable &symtable) {
+    vector<Error> ifElseErrors;
+
+    // lhs is a boolean expr, rhs is a brace statement
+    Node* predicate = current->getEdges()[0];
+    Node* ifBody = current->getEdges()[1];
+    Node* elseBody = current->getEdges()[2];
+
+    vector<Error> predicateErrors = exprStmt(predicate, symtable);
+    for (Error e : predicateErrors) ifElseErrors.push_back(e);
+
+    vector<Error> bodyErrors = braceStmt(ifBody, symtable);
+    for (Error e : bodyErrors) ifElseErrors.push_back(e);
+
+    vector<Error> elseErrors = braceStmt(elseBody, symtable);
+    for (Error e : elseErrors) ifElseErrors.push_back(e);
+
+    return ifElseErrors;
+}
+
+vector<Error> Grammar::whileStmt(Node* current, SymTable &symtable) {
+    vector<Error> whileErrors;
+
+    // lhs is a boolean expr, rhs is a brace statement
+    Node* predicate = current->getEdges()[0];
+    Node* body = current->getEdges()[1];
+
+    vector<Error> predicateErrors = exprStmt(predicate, symtable);
+    for (Error e : predicateErrors) whileErrors.push_back(e);
+
+    vector<Error> bodyErrors = braceStmt(body, symtable);
+    for (Error e : bodyErrors) whileErrors.push_back(e);
+
+    return whileErrors;
+}
+
+vector<Error> Grammar::emitStmt(Node* current, SymTable &symtable, string fileDump) {    
+    vector<Error> emitErrors;
+    
+    // emit symtable
+    if (current->getEdges().size() == 2) {
+        dumpSymTable(fileDump, symtable);
+        return emitErrors;
+    }
+    // emit id AEXPR AEXPR
+    Node* idNode = current->getEdges()[0];
+    Node* expr1 = current->getEdges()[1];
+    Node* expr2 = current->getEdges()[2];
+
+    // check if id node exists, and is initialized
+    vector<string> varInfo = symtable.getSymbol(idNode->getVal());
+    if (varInfo[0] == "dne") {
+        Error novar;
+        novar.type = Error::ErrorType::ERROR;
+        novar.id = Error::ErrorID::NOVAR;
+        emitErrors.push_back(novar);
+    }
+    else {
+        if (varInfo[3] != "YES") {
+            Error uninit;
+            uninit.type = Error::ErrorType::WARN;
+            uninit.id = Error::ErrorID::UNINIT;
+            emitErrors.push_back(uninit);
+        }
+    }
+
+    // check each expression
+    string type;
+    vector<Error> exprErrors = exprStmt(expr1, symtable, type);
+    for (Error e : exprErrors) emitErrors.push_back(e);
+    exprErrors = exprStmt(expr2, symtable, type);
+    for (Error e : exprErrors) emitErrors.push_back(e);
+
+    return emitErrors;
+}
+
+string Grammar::isOperator(string op) {
+    if (op == "plus" ||
+        op == "minus")
+    {
+        return "PLUS";
+    }
+    if (op == "mult" ||
+        op == "div" ||
+        op == "mod")
+    {
+        return "TIMES";
+    }
+    if (op == "not" ||
+        op == "compl")
+    {
+        return "UNARY";
+    }
+    if (op == "lt" ||
+        op == "leq" ||
+        op == "eq" ||
+        op == "geq" ||
+        op == "gt")
+    {
+        return "BOOLS"
+    }
+
+    return "NO";
+}
+
+void Grammar::dumpSymTable(string fileDump, SymTable symtable) {
+    map<int, vector<vector<string>>> symbols;
+    map<string, vector<string>> table = symtable.getTable();
+
+    for (pair<string, vector<string>> symbol : table) {
+        vector<string> data;
+        string scope = symbol.second[1];
+        string type = symbol.second[0];
+        string name = symbol.first;
+
+        data.push_back(scope);
+        data.push_back(type);
+        data.push_back(name);
+
+        int scopeInt = stoi(scope);
+        if (symbols.find(scopeInt) == symbols.end()) {
+            vector<vector<string>> scopeV;
+            scopeV.push_back(data);
+            symbols.insert(pair<int, vector<vector<string>>>(scopeInt, scopeV));
+        }
+        else {
+            vector<vector<string>> scopeV = symbols[scopeInt];
+            scopeV.push_back(data);
+            symbols[scopeInt] = scopeV;
+        }
+    }
+
+    ofstream outFile(fileDump);
+    for (pair<int, vector<vector<string>>> scope : symbols) {
+        for (vector<string> symbol : scope.second) {
+            outFile << symbol[0] << ",";
+            outFile << symbol[1] << ",";
+            outFile << symbol[2] << endl;
+        }
+    }
+    outFile.close();
+}

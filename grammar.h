@@ -45,6 +45,22 @@ public:
 
     // ZOBOS
     Node* parseString(map<int, map<string, srAction>> slrTable, string tokenStreamFile);
+    vector<Error> semanticChecks(Node* head, string fileDump);
+    vector<Error> recursiveCheck(Node* current, SymTable &symtable, string fileDump);
+
+    vector<Error> braceStmt(Node* current, SymTable &symtable);
+    vector<Error> declStmt(Node* current, SymTable &symtable);
+    vector<Error> declIdStmt(Node* current, SymTable &symtable, string type);
+    vector<Error> assignStmt(Node* current, SymTable &symtable);
+    vector<Error> assignStmt(Node* current, SymTable &symtable, string type);
+    vector<Error> exprStmt(Node* current, SymTable &symtable, string &type);
+    vector<Error> ifStmt(Node* current, SymTable &symtable);
+    vector<Error> ifElseStmt(Node* current, SymTable &symtable);
+    vector<Error> whileStmt(Node* current, SymTable &symtable);
+    vector<Error> emitStmt(Node* current, SymTable &symtable, string fileDump);
+
+    string isOperator(string op);
+    void dumpSymTable(string fileDump, SymTable symtable);
 
     // Other
     void print();
