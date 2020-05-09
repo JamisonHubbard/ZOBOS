@@ -1231,7 +1231,7 @@ vector<Error> Grammar::exprStmt(Node* current, SymTable &symtable, string &type)
     
     vector<Error> exprErrors;
 
-    if (current->edges.empty()) {
+    if (current->edges.size() < 2) {
         return exprErrors;
     }
     
@@ -1423,7 +1423,7 @@ vector<Error> Grammar::emitStmt(Node* current, SymTable &symtable, string fileDu
     vector<Error> emitErrors;
     
     // emit symtable
-    if (current->getEdges().size() == 2) {
+    if (current->getEdges().size() == 1) {
         dumpSymTable(fileDump, symtable);
         return emitErrors;
     }
