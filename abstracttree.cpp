@@ -67,7 +67,7 @@ Node* simplifyNode(Node* node) {
         Node* child = node->edges[0];
         delete node;
 
-        return simplifyNode(child);
+        return child;
     } else if (id == "AEXPR") {
         Node* sumNode = node->edges[0];
         delete node;
@@ -183,6 +183,9 @@ Node* simplifyNode(Node* node) {
         }
 
         node->addEdge(eof);
+    } else if (id == "stringval") {
+        node->val.erase(0, 1);
+        node->val.erase(node->val.size() - 1);
     }
 
     return node;

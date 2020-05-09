@@ -124,7 +124,7 @@ map<int, map<string, srAction>> readSLRTable(string filename) {
         currentSym = "";
         int symbolIndex = 1;
         while (inLine >> holder) {
-            if (holder == ',' || holder == '\n') {
+            if (holder == ',') {
                 srAction newAction;
                 if (currentSym == "") {
                     newAction.status = false;
