@@ -51,11 +51,14 @@ int main(int argc, char *argv[]) {
 
     vector<Error> errors = g.semanticChecks(ast, symTableFile);
 
+    unsigned int numErrors = 0;
     for (Error e : errors) {
         string type, id;
         if (e.type == Error::ErrorType::WARN) type = "WARN";
-        else if (e.type == Error::ErrorType::ERROR) type = "ERROR";
-        else if (e.type == Error::ErrorType::WARN) type = "SYNTAX";
+        else if (e.type == Error::ErrorType::ERROR) {
+            type = "ERROR";
+            numErrors++;
+        } else if (e.type == Error::ErrorType::WARN) type = "SYNTAX";
         else if (e.type == Error::ErrorType::VOID) id = "VOID";
 
         if (e.id == Error::ErrorID::SYNTAX) id = "SYNTAX";
@@ -69,6 +72,10 @@ int main(int argc, char *argv[]) {
         else if (e.id == Error::ErrorID::VOID) id = "VOID";
 
         cout << ":" << type << ":   :" << id <<":\n";
+    }
+
+    if (numErrors > 0) {
+        exit(1);
     }
 
     //head->printEdges(0);
