@@ -44,10 +44,7 @@ public:
     void generateLL1Table();
 
     // ZOBOS
-    Node* parseString(map<int, map<string, srAction>> slrTable,
-    string tokenStreamFile);
-    vector<Error> semanticChecks(Node* head);
-    vector<Error> recursiveCheck(Node* current, SymTable &symtable);
+    Node* parseString(map<int, map<string, srAction>> slrTable, string tokenStreamFile);
 
     // Other
     void print();

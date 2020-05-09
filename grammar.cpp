@@ -644,7 +644,7 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
     vector<Node*> right;
 
     // put 10 $ symbols on right stack as buffer
-    for (int i = 0; i < 10; ++i) {
+    for (uint i = 0; i < 10; ++i) {
         Node* dollarNode = new Node("$", "$");
         right.push_back(dollarNode);
     }
@@ -752,7 +752,7 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
             vector<Node*> nodesToReduce;
             for (int i = statesToReduce.size()-1; i > -1; --i) {
                 vector<Node*> nodes = statesToReduce[i]->getEdges();
-                for (int i = 0; i < nodes.size(); ++i) {
+                for (uint i = 0; i < nodes.size(); ++i) {
                     nodesToReduce.push_back(nodes[i]);
                 }
 
@@ -762,7 +762,7 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
 
             // create new nonterminal node as parent
             Node* parent = new Node(reduceRule.getLHS(), "NONTERMINAL");
-            for (int i = 0; i < nodesToReduce.size(); ++i) {
+            for (uint i = 0; i < nodesToReduce.size(); ++i) {
                 parent->addEdge(nodesToReduce[i]);
             }
 
@@ -850,7 +850,7 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
             vector<Node*> nodesToReduce;
             for (int i = statesToReduce.size()-1; i > -1; --i) {
                 vector<Node*> nodes = statesToReduce[i]->getEdges();
-                for (int i = 0; i < nodes.size(); ++i) {
+                for (uint i = 0; i < nodes.size(); ++i) {
                     nodesToReduce.push_back(nodes[i]);
                 }
 
@@ -860,7 +860,7 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
 
             // create new nonterminal node as parent
             Node* parent = new Node(reduceRule.getLHS(), "NONTERMINAL");
-            for (int i = 0; i < nodesToReduce.size(); ++i) {
+            for (uint i = 0; i < nodesToReduce.size(); ++i) {
                 parent->addEdge(nodesToReduce[i]);
             }
 
@@ -874,57 +874,14 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
     right.pop_back();
 
     // cleanup
-    for (int i = 0; i < left.size(); ++i) {
+    for (uint i = 0; i < left.size(); ++i) {
         left[i]->clearEdges();
         delete left[i];
     }
-    for (int i = 0; i < right.size(); ++i) {
+    for (uint i = 0; i < right.size(); ++i) {
         right[i]->clearEdges();
         delete right[i];
     }
 
     return finalNode;
-}
-
-vector<Error> Grammar::semanticChecks(Node* head) {
-    SymTable symtable;
-
-    vector<Error> totalErrors = recursiveCheck(head, symtable);
-
-    return totalErrors;
-}
-
-vector<Error> Grammar::recursiveCheck(Node* current, SymTable &symtable) {
-    vector<Error> myErrors;
-
-    // if in a declaration
-    if (current->getID() == "DECLLIST") {
-        // two children
-        Node* typeChild = current->getEdges()[0];
-        Node* namesChild = current->getEdges()[1];
-
-        // get type
-        string type = typeChild->getID();
-
-        vector<string> names;
-        // get name from one reference
-        if (namesChild->getID() == "DECLID") {
-            Node* namesGrandChild = namesChild->getEdges[0];
-            // no assignment
-            if (namesGrandChild->getID() == "id") {
-                names.push_back(namesGrandChild->getVal());
-            }
-            // with assignment
-            
-        }
-    }
-
-    // recursively descend through children
-    for (int i = 0; i < current->getEdges().size(); ++i) {
-        Node* child = current->getEdges[i];
-        vector<Error> newErrors = recursiveCheck(child, symtable, state);
-        for (Error newE : newErrors) myErrors.push_back(newE);
-    }
-
-    return myErrors;
 }
