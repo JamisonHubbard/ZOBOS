@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     Node* head = g.parseString(slrTable, tokenStreamFile);
 
     if (head->getID() == "SYNTAX") {
-        cout << ":SYNTAX: " << head->getVal() << " :SYNTAX:\n";
+        cout << "OUTPUT :SYNTAX: " << head->getVal() << " :SYNTAX:\n";
         exit(1);
     }
 
