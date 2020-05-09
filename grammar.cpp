@@ -666,20 +666,22 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
         string tokenID, tokenVal;
         inLine >> tokenID;
         inLine >> tokenVal;
+        tokenVal = fromAlphabetNotation(tokenVal);
+        int tokenRow, tokenCol;
+        inLine >> tokenRow;
+        inLine >> tokenCol;
 
-        // get node from right stack, or toekn stream
-        // it the right stack is empty
+        // get node from right stack, or token stream
+        // if the right stack is empty
         Node* rightTip;
         if (right.size() == 10) {
-            rightTip = new Node(tokenID, tokenVal);
+            rightTip = new Node(tokenID, tokenVal, { tokenRow, tokenCol });
             right.push_back(rightTip);
             prevLine = inFile.tellg();
-            int row, col;
-            inLine >> row;
-            inLine >> col;
+
             vector<int> location;
-            location.push_back(row);
-            location.push_back(col);
+            location.push_back(tokenRow);
+            location.push_back(tokenCol);
             srcLocs.insert(pair<Node*, vector<int>>(rightTip, location));
         } 
         else {
@@ -885,4 +887,31 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
     }
 
     return finalNode;
+}
+
+int Grammar::hexValue(char c) {
+    c = (char)std::tolower(c);
+
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    } else if (c >= 'a' && c <= 'f') {
+        return (c - 'a') + 10;
+    } else {
+        return -1;
+    }
+}
+
+string Grammar::fromAlphabetNotation(string encoded) {
+    string decoded = "";
+    for (uint i = 0; i < encoded.size(); i++) {
+        char c = encoded[i];
+        if (c == 'x') {
+            decoded += 16 * hexValue(encoded[i + 1]) + hexValue(encoded[i + 2]);
+            i = i + 2;
+        } else {
+            decoded += c;
+        }
+    }
+
+    return decoded;
 }

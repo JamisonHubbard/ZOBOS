@@ -68,6 +68,9 @@ private:
     map<string, vector<int>> ll1_table;
     map<string, int> ll1_index;
     bool ambiguous;
+
+    int hexValue(char c);
+    string fromAlphabetNotation(string encoded);
 };
 
 #endif /*GRAMMAR_H*/

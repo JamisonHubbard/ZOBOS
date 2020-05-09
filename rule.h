@@ -12,6 +12,7 @@ using namespace std;
 
 #include <string>
 #include <vector>
+#include <ostream>
 
 class Rule {
 public:
@@ -23,10 +24,12 @@ public:
     string getLHS();
     vector<string> getRHS();
     int getSymbolCount();
+    string asString() const;
 
     // Other
     bool operator<(const Rule &other) const;
 
+    friend std::ostream& operator<<(std::ostream& out, const Rule rule);
 private:
     string first;
     vector<string> second;
