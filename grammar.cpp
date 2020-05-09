@@ -794,8 +794,8 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
 
         // syntax error
         if (!(action.status)) {
-            vector<int> location = srcLocs[rightTip];
-            string locData = to_string(location[0]) + " " + to_string(location[1]);
+            Location loc = rightTip->location;
+            string locData = to_string(loc.row) + " " + to_string(loc.col);
             Node* error = new Node("SYNTAX", locData);
             return error;
         }
@@ -933,6 +933,8 @@ vector<Error> Grammar::recursiveCheck(Node* current, SymTable &symtable, string 
             for (Error e : childErrors) currentErrors.push_back(e);
         }
     }
+
+    return currentErrors;
 }
 
 vector<Error> Grammar::braceStmt(Node* current, SymTable &symtable, string fileDump) {
