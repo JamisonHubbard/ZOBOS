@@ -26,6 +26,16 @@ string Rule::getLHS() {return first;}
 vector<string> Rule::getRHS() {return second;}
 int Rule::getSymbolCount() {return symbolCount;}
 
+string Rule::asString() const {
+    string thisStr = "";
+    thisStr += first + " -> ";
+    for (string symbol : second) {
+        thisStr += symbol + " ";
+    }
+
+    return thisStr;
+}
+
 // Other
 bool Rule::operator<(const Rule &other) const {
     // this operator is defined because std::set containers use the
@@ -33,10 +43,12 @@ bool Rule::operator<(const Rule &other) const {
     // So this operator tests if the rules are the same and returns
     // true if they're not so std::set handles them as different.
 
-    if (symbolCount != other.symbolCount) return true;
-    if (first != other.first) return true;
-    for (int i = 0; i < second.size(); ++i) {
-        if (second[i] != other.second[i]) return true;
-    }
-    return false;
+    string thisStr = this->asString();
+    string otherStr = other.asString();
+
+    return thisStr < otherStr;
+}
+
+std::ostream& operator<<(std::ostream& out, const Rule rule) {
+    return out << rule.asString();
 }

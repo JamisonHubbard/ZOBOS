@@ -14,7 +14,10 @@ using namespace std;
 #include <iostream>
 #include "srAction.h"
 #include "grammar.h"
+#include "abstracttree.h"
 
+void writeAST(Node* node, const string filename);
+void traverseAST(Node* node, string address, string& first, string& second);
 map<int, map<string, srAction>> readSLRTable(string filename);
 
 int main(int argc, char *argv[]) {
@@ -27,8 +30,7 @@ int main(int argc, char *argv[]) {
     if (argc == 6) {
         grammarFile = argv[4];
         slrFile = argv[5];
-    }
-    else {
+    } else {
         grammarFile = "./provided/zlang-pure.cfg";
         slrFile = "./provided/zlang.lr";
     }
@@ -37,12 +39,50 @@ int main(int argc, char *argv[]) {
     map<int, map<string, srAction>> slrTable = readSLRTable(slrFile);
 
     Node* head = g.parseString(slrTable, tokenStreamFile);
+
+    Node* ast = simplifyConcreteTree(head);
+    writeAST(ast, astFile);
+
     head->printEdges(0);
     
     head->clearEdges();
     delete head;
 
     return 0;
+}
+
+void writeAST(Node* root, const string filename) {
+    string firstPart, secondPart;
+
+    traverseAST(root, "0", firstPart, secondPart);
+
+    ofstream outFile(filename);
+    if (!outFile) {
+        exit(1);
+    }
+
+    outFile << firstPart;
+    outFile << "\n";
+    outFile << secondPart;
+    outFile.close();
+}
+
+void traverseAST(Node* node, string address, string& first, string& second) {
+    if (node->val == "NONTERMINAL") {
+        first += address + " " + node->id + "\n";
+    } else {
+        first += address + " " + node->val + "\n";
+    }
+
+    if (!node->edges.empty()) {
+        for (uint i = 0; i < node->edges.size(); i++) {
+            Node* child = node->edges[i];
+            string childAddress = address + "-" + to_string(i);
+
+            second += address + " " + childAddress + "\n";
+            traverseAST(child, childAddress, first, second);
+        }
+    }
 }
 
 map<int, map<string, srAction>> readSLRTable(string filename) {
