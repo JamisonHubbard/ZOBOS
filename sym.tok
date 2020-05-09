@@ -1,0 +1,15 @@
+int int
+id a
+assign =
+intval 0
+sc ;
+id a
+assign =
+int int
+lparen (
+id a
+rparen )
+sc ;
+emit emit
+symtable symtable
+sc ;

@@ -61,6 +61,7 @@ Error SymTable::enterSymbol(string name, string type) {
         newData.push_back(type);
         newData.push_back(to_string(currentScope));
         newData.push_back(newName);
+        newData.push_back("");
         table[name] = newData;
         return noError;
     }

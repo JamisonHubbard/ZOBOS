@@ -667,6 +667,10 @@ Node* Grammar::parseString(map<int, map<string, srAction>> slrTable, string toke
         inLine >> tokenID;
         inLine >> tokenVal;
         tokenVal = fromAlphabetNotation(tokenVal);
+
+        if (inLine.eof()) {
+            exit(1);
+        }
         int tokenRow, tokenCol;
         inLine >> tokenRow;
         inLine >> tokenCol;
@@ -1226,6 +1230,10 @@ vector<Error> Grammar::exprStmt(Node* current, SymTable &symtable, string &type)
     uninit.id = Error::ErrorID::UNINIT;
     
     vector<Error> exprErrors;
+
+    if (current->edges.empty()) {
+        return exprErrors;
+    }
     
     // identify lhs and rhs
     Node* lhs = current->getEdges()[0];

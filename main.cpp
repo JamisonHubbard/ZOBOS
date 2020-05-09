@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 
     if (head->getID() == "SYNTAX") {
         cout << ":SYNTAX: " << head->getVal() << " :SYNTAX:\n";
-        exit(0);
+        exit(1);
     }
 
     Node* ast = simplifyConcreteTree(head);
