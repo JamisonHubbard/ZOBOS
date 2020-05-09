@@ -1441,7 +1441,7 @@ vector<Error> Grammar::emitStmt(Node* current, SymTable &symtable, string fileDu
         emitErrors.push_back(novar);
     }
     else {
-        if (varInfo[3] != "YES") {
+        if (varInfo[SymTable::INITIALIZED] != "YES") {
             Error uninit;
             uninit.type = Error::ErrorType::WARN;
             uninit.id = Error::ErrorID::UNINIT;
@@ -1490,37 +1490,14 @@ string Grammar::isOperator(string op) {
 
 void Grammar::dumpSymTable(string fileDump, SymTable symtable) {
     map<int, vector<vector<string>>> symbols;
-    map<string, vector<string>> table = symtable.getTable();
-
-    for (pair<string, vector<string>> symbol : table) {
-        vector<string> data;
-        string scope = symbol.second[1];
-        string type = symbol.second[0];
-        string name = symbol.first;
-
-        data.push_back(scope);
-        data.push_back(type);
-        data.push_back(name);
-
-        int scopeInt = stoi(scope);
-        if (symbols.find(scopeInt) == symbols.end()) {
-            vector<vector<string>> scopeV;
-            scopeV.push_back(data);
-            symbols.insert(pair<int, vector<vector<string>>>(scopeInt, scopeV));
-        }
-        else {
-            vector<vector<string>> scopeV = symbols[scopeInt];
-            scopeV.push_back(data);
-            symbols[scopeInt] = scopeV;
-        }
-    }
+    map<unsigned int, vector<vector<string>>> table = symtable.getTable();
 
     ofstream outFile(fileDump);
-    for (pair<int, vector<vector<string>>> scope : symbols) {
-        for (vector<string> symbol : scope.second) {
-            outFile << symbol[0] << ",";
-            outFile << symbol[1] << ",";
-            outFile << symbol[2] << endl;
+    for (auto const [scope, symbols] : table) {
+        for (vector<string> symbol : symbols) {
+            outFile << to_string(scope) << ",";
+            outFile << symbol[SymTable::TYPE] << ",";
+            outFile << symbol[SymTable::NAME] << endl;
         }
     }
     outFile.close();

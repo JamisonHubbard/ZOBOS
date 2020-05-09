@@ -15,25 +15,7 @@ void SymTable::openScope() {
 }
 
 void SymTable::closeScope() {
-    vector<string> currentVars;
-    for (pair<string, vector<string>> symbol : table) {
-        if (symbol.second[1] == to_string(currentScope)) {
-            currentVars.push_back(symbol.first);
-        }
-    }
-    for (string id : currentVars) {
-        if (table[id][2] != "") {
-            vector<string> oldData = table[table[id][2]];
-            table[id] = oldData;
-            map<string, vector<string>>::iterator mit = table.find(table[id][2]);
-            table.erase(mit);
-        }
-        else {
-            map<string, vector<string>>::iterator mit = table.find(id);
-            table.erase(mit);
-        }
-    }
-
+    table.erase(currentScope);
     --currentScope;
 }
 
@@ -43,77 +25,66 @@ Error SymTable::enterSymbol(string name, string type) {
     noError.id = Error::ErrorID::VOID;
     
     // symbol name already in use
-    if (table.find(name) != table.end()) {
+    if (declaredLocally(name)) {
         // in use in current scope
-        if (table[name][1] == to_string(currentScope)) {
-            Error revar;
-            revar.type = Error::ErrorType::WARN;
-            revar.id = Error::ErrorID::REVAR;
-            return revar;
-        }
+        Error revar;
+        revar.type = Error::ErrorType::WARN;
+        revar.id = Error::ErrorID::REVAR;
+        return revar;
+    } else {
         // if not in current scope
-        string newName = name;
-        for (int i = 0; i < stoi(table[name][1]); ++i) {
-            newName += "X";
-        }
-        table[newName] = table[name];
         vector<string> newData;
+        newData.push_back(name);
         newData.push_back(type);
-        newData.push_back(to_string(currentScope));
-        newData.push_back(newName);
-        newData.push_back("");
-        table[name] = newData;
+        newData.push_back("NO");
+        table[currentScope].push_back(newData);
         return noError;
     }
-
-    // if name not in use
-    vector<string> newData;
-    newData.push_back(type);
-    newData.push_back(to_string(currentScope));
-    newData.push_back("");
-    newData.push_back("");
-    table[name] = newData;
 
     return noError;
 }
 
 vector<string> SymTable::getSymbol(string name) {
-    // symbol dne
-    if (table.find(name) == table.end()) {
-        vector<string> dne;
-        return dne;
+    for (int scope = currentScope; scope >= 0; scope--) {
+        for (vector<string> symbol : table[scope]) {
+            if (symbol[NAME] == name) {
+                return symbol;
+            }
+        }
     }
 
-    return table[name];
+    vector<string> noSymbol;
+    return noSymbol;
 }
 
 bool SymTable::declaredLocally(string name) {
-    // if does not exist
-    if (table.find(name) == table.end()) {
-        return false;
-    }
-
-    // if exists
-    return true;
-}
-
-void SymTable::init(string name) {
-    if (table.find(name) != table.end()) {
-        vector<string> data = table[name];
-        data[3] = "YES";
-        table[name] = data;
-    }
-}
-
-bool SymTable::isInit(string name) {
-    if (table.find(name) != table.end()) {
-        string initString = table[name][3];
-        if (initString == "YES") return true;
+    for (vector<string> sym : table[currentScope]) {
+        if (sym[NAME] == name) {
+            return true;
+        }
     }
 
     return false;
 }
 
+void SymTable::init(string name) {
+    for (int scope = currentScope; scope >= 0; scope--) {
+        for (vector<string>& symbol : table[scope]) {
+            if (symbol[NAME] == name) {
+                symbol[INITIALIZED] = "YES";
+                scope = -1;
+                break;
+            }
+        }
+    }
+}
+
+bool SymTable::isInit(string name) {
+    vector<string> symbol = getSymbol(name);
+
+    return symbol[INITIALIZED] == "YES";
+}
+
 int SymTable::getCurrentScope() {return currentScope;}
 
-map<string, vector<string>> SymTable::getTable() {return table;}
+std::map<unsigned int, std::vector<std::vector<std::string>>> SymTable::getTable() {return table;}

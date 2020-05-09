@@ -19,12 +19,17 @@ public:
     bool isInit(std::string name);
 
     int getCurrentScope();
-    std::map<std::string, std::vector<std::string>> getTable();
+    std::map<unsigned int, std::vector<std::vector<std::string>>> getTable();
+
+    static const unsigned int NAME = 0;
+    static const unsigned int TYPE = 1;
+    static const unsigned int INITIALIZED = 2;
 
 private:
-    // name -  type, scope, opt. replacement id, init
-    std::map<std::string, std::vector<std::string>> table;
-    int currentScope;
+
+    // scope -  name, type, init
+    std::map<unsigned int, std::vector<std::vector<std::string>>> table;
+    unsigned int currentScope;
 };
 
 #endif /*SYMTABLE_H*/
