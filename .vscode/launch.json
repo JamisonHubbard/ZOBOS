@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/ZOBOS",
-            "args": ["./provided/helloworld.tok", "blah", "blah",],
+            "args": ["./provided/awolterminals.tok", "./outputs/ast.out", "sym.out",],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

@@ -14,6 +14,7 @@ using namespace std;
 #include <iostream>
 #include "srAction.h"
 #include "grammar.h"
+#include "error.h"
 #include "abstracttree.h"
 
 void writeAST(Node* node, const string filename);
@@ -40,10 +41,37 @@ int main(int argc, char *argv[]) {
 
     Node* head = g.parseString(slrTable, tokenStreamFile);
 
+    if (head->getID() == "SYNTAX") {
+        cout << ":SYNTAX: " << head->getVal() << " :SYNTAX:\n";
+        exit(0);
+    }
+
     Node* ast = simplifyConcreteTree(head);
     writeAST(ast, astFile);
 
-    head->printEdges(0);
+    vector<Error> errors = g.semanticChecks(ast, symTableFile);
+
+    for (Error e : errors) {
+        string type, id;
+        if (e.type == Error::ErrorType::WARN) type = "WARN";
+        else if (e.type == Error::ErrorType::ERROR) type = "ERROR";
+        else if (e.type == Error::ErrorType::WARN) type = "SYNTAX";
+        else if (e.type == Error::ErrorType::VOID) id = "VOID";
+
+        if (e.id == Error::ErrorID::SYNTAX) id = "SYNTAX";
+        else if (e.id == Error::ErrorID::NOVAR) id = "NOVAR";
+        else if (e.id == Error::ErrorID::CONV) id = "CONV";
+        else if (e.id == Error::ErrorID::EXPR) id = "EXPR";
+        else if (e.id == Error::ErrorID::REVAR) id = "REVAR";
+        else if (e.id == Error::ErrorID::UNUSED) id = "UNUSED";
+        else if (e.id == Error::ErrorID::UNINIT) id = "UNINIT";
+        else if (e.id == Error::ErrorID::CONST) id = "CONST";
+        else if (e.id == Error::ErrorID::VOID) id = "VOID";
+
+        cout << ":" << type << ":   :" << id <<":\n";
+    }
+
+    //head->printEdges(0);
     
     head->clearEdges();
     delete head;
