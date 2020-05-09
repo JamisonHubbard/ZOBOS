@@ -54,24 +54,24 @@ int main(int argc, char *argv[]) {
     unsigned int numErrors = 0;
     for (Error e : errors) {
         string type, id;
-        if (e.type == Error::ErrorType::WARN) type = "WARN";
-        else if (e.type == Error::ErrorType::ERROR) {
+        if (e.type == Error::Type::WARN) type = "WARN";
+        else if (e.type == Error::Type::ERROR) {
             type = "ERROR";
             numErrors++;
-        } else if (e.type == Error::ErrorType::WARN) type = "SYNTAX";
-        else if (e.type == Error::ErrorType::VOID) id = "VOID";
+        } else if (e.type == Error::Type::WARN) type = "SYNTAX";
+        else if (e.type == Error::Type::VOID) id = "VOID";
 
-        if (e.id == Error::ErrorID::SYNTAX) id = "SYNTAX";
-        else if (e.id == Error::ErrorID::NOVAR) id = "NOVAR";
-        else if (e.id == Error::ErrorID::CONV) id = "CONV";
-        else if (e.id == Error::ErrorID::EXPR) id = "EXPR";
-        else if (e.id == Error::ErrorID::REVAR) id = "REVAR";
-        else if (e.id == Error::ErrorID::UNUSED) id = "UNUSED";
-        else if (e.id == Error::ErrorID::UNINIT) id = "UNINIT";
-        else if (e.id == Error::ErrorID::CONST) id = "CONST";
-        else if (e.id == Error::ErrorID::VOID) id = "VOID";
+        if (e.id == Error::ID::SYNTAX) id = "SYNTAX";
+        else if (e.id == Error::ID::NOVAR) id = "NOVAR";
+        else if (e.id == Error::ID::CONV) id = "CONV";
+        else if (e.id == Error::ID::EXPR) id = "EXPR";
+        else if (e.id == Error::ID::REVAR) id = "REVAR";
+        else if (e.id == Error::ID::UNUSED) id = "UNUSED";
+        else if (e.id == Error::ID::UNINIT) id = "UNINIT";
+        else if (e.id == Error::ID::CONST) id = "CONST";
+        else if (e.id == Error::ID::VOID) id = "VOID";
 
-        cout << ":" << type << ":   :" << id <<":\n";
+        cout << "OUTPUT :" << type << ":   :" << id <<":\n";
     }
 
     if (numErrors > 0) {

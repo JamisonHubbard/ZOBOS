@@ -980,7 +980,7 @@ vector<Error> Grammar::declIdStmt(Node* current, SymTable &symtable, string type
     if (current->getEdges()[0]->getID() == "id") {
         string name = current->getEdges()[0]->getVal();
         Error newError = symtable.enterSymbol(name, type);
-        if (newError.type != Error::ErrorType::VOID) declIdErrors.push_back(newError);
+        if (newError.type != Error::Type::VOID) declIdErrors.push_back(newError);
     }
 
     // else for assign statement
@@ -1002,8 +1002,8 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
     // WARN::CONST - comes from lhs being a const type
 
     Error noVar;
-    noVar.type = Error::ErrorType::ERROR;
-    noVar.id = Error::ErrorID::NOVAR;
+    noVar.type = Error::Type::ERROR;
+    noVar.id = Error::ID::NOVAR;
 
     vector<Error> assignErrors;
 
@@ -1029,8 +1029,8 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
         leftType == "const float")
     {
         Error constError;
-        constError.type = Error::ErrorType::WARN;
-        constError.id = Error::ErrorID::CONST;
+        constError.type = Error::Type::WARN;
+        constError.id = Error::ID::CONST;
         assignErrors.push_back(constError);
     }
 
@@ -1053,8 +1053,8 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
             // non-declarative assignment function)
             if (!symtable.isInit(rhs->getVal())) {
                 Error uninit;
-                uninit.type = Error::ErrorType::WARN;
-                uninit.id = Error::ErrorID::UNINIT;
+                uninit.type = Error::Type::WARN;
+                uninit.id = Error::ID::UNINIT;
 
                 assignErrors.push_back(uninit);
             }
@@ -1082,8 +1082,8 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
     }
 
     Error convError;
-    convError.type = Error::ErrorType::ERROR;
-    convError.id = Error::ErrorID::CONV;
+    convError.type = Error::Type::ERROR;
+    convError.id = Error::ID::CONV;
     if (leftType != rhsType) {
         // check type conversions allowed
         if (leftType == "int") {
@@ -1129,8 +1129,8 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable, string type
     // WARN::REVAR - comes from symtable enterSymbol()
 
     Error noVar;
-    noVar.type = Error::ErrorType::ERROR;
-    noVar.id = Error::ErrorID::NOVAR;
+    noVar.type = Error::Type::ERROR;
+    noVar.id = Error::ID::NOVAR;
     
     vector<Error> assignErrors;
     
@@ -1138,7 +1138,7 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable, string type
     string name = current->getEdges()[0]->getVal();
     Error newError = symtable.enterSymbol(name, type);
     symtable.init(name);
-    if (newError.type != Error::ErrorType::VOID) assignErrors.push_back(newError);
+    if (newError.type != Error::Type::VOID) assignErrors.push_back(newError);
 
     // check for conversion error
 
@@ -1177,8 +1177,8 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable, string type
         }
     }
     Error convError;
-    convError.type = Error::ErrorType::ERROR;
-    convError.id = Error::ErrorID::CONV;
+    convError.type = Error::Type::ERROR;
+    convError.id = Error::ID::CONV;
     if (type != rhsType) {
         // check type conversions allowed
         if (type == "int") {
@@ -1224,10 +1224,10 @@ vector<Error> Grammar::exprStmt(Node* current, SymTable &symtable, string &type)
 
     Error noVar;
     Error uninit;
-    noVar.type = Error::ErrorType::ERROR;
-    noVar.id = Error::ErrorID::NOVAR;
-    uninit.type = Error::ErrorType::WARN;
-    uninit.id = Error::ErrorID::UNINIT;
+    noVar.type = Error::Type::ERROR;
+    noVar.id = Error::ID::NOVAR;
+    uninit.type = Error::Type::WARN;
+    uninit.id = Error::ID::UNINIT;
     
     vector<Error> exprErrors;
 
@@ -1296,8 +1296,8 @@ vector<Error> Grammar::exprStmt(Node* current, SymTable &symtable, string &type)
     // check typing
     string currentOp = current->getID();
     Error convError;
-    convError.type = Error::ErrorType::ERROR;
-    convError.id = Error::ErrorID::EXPR;
+    convError.type = Error::Type::ERROR;
+    convError.id = Error::ID::EXPR;
     if (isOperator(currentOp) != "NO") {
         // type restrictions
         if (leftType == "string" ||
@@ -1436,15 +1436,15 @@ vector<Error> Grammar::emitStmt(Node* current, SymTable &symtable, string fileDu
     vector<string> varInfo = symtable.getSymbol(idNode->getVal());
     if (varInfo[0] == "dne") {
         Error novar;
-        novar.type = Error::ErrorType::ERROR;
-        novar.id = Error::ErrorID::NOVAR;
+        novar.type = Error::Type::ERROR;
+        novar.id = Error::ID::NOVAR;
         emitErrors.push_back(novar);
     }
     else {
         if (varInfo[SymTable::INITIALIZED] != "YES") {
             Error uninit;
-            uninit.type = Error::ErrorType::WARN;
-            uninit.id = Error::ErrorID::UNINIT;
+            uninit.type = Error::Type::WARN;
+            uninit.id = Error::ID::UNINIT;
             emitErrors.push_back(uninit);
         }
     }

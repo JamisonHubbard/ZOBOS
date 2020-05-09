@@ -21,15 +21,15 @@ void SymTable::closeScope() {
 
 Error SymTable::enterSymbol(string name, string type) {
     Error noError;
-    noError.type = Error::ErrorType::VOID;
-    noError.id = Error::ErrorID::VOID;
+    noError.type = Error::Type::VOID;
+    noError.id = Error::ID::VOID;
     
     // symbol name already in use
     if (declaredLocally(name)) {
         // in use in current scope
         Error revar;
-        revar.type = Error::ErrorType::WARN;
-        revar.id = Error::ErrorID::REVAR;
+        revar.type = Error::Type::WARN;
+        revar.id = Error::ID::REVAR;
         return revar;
     } else {
         // if not in current scope
