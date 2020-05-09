@@ -900,7 +900,7 @@ vector<Error> Grammar::recursiveCheck(Node* current, SymTable &symtable, string 
     vector<Error> currentErrors;
 
     if (nodeType == "BRACESTMTS") {
-        vector<Error> braceErrors = braceStmt(current, symtable);
+        vector<Error> braceErrors = braceStmt(current, symtable, fileDump);
         for (Error e : braceErrors) currentErrors.push_back(e);
     }
     else if (nodeType == "DECLLIST") {
@@ -912,15 +912,15 @@ vector<Error> Grammar::recursiveCheck(Node* current, SymTable &symtable, string 
         for (Error e : assignErrors) currentErrors.push_back(e);
     }
     else if (nodeType == "IF") {
-        vector<Error> ifErrors = ifStmt(current, symtable);
+        vector<Error> ifErrors = ifStmt(current, symtable, fileDump);
         for (Error e : ifErrors) currentErrors.push_back(e);
     }
     else if (nodeType == "IFELSE") {
-        vector<Error> ifElseErrors = ifElseStmt(current, symtable);
+        vector<Error> ifElseErrors = ifElseStmt(current, symtable, fileDump);
         for (Error e : ifElseErrors) currentErrors.push_back(e);
     }
     else if (nodeType == "WHILE") {
-        vector<Error> whileErrors = whileStmt(current, symtable);
+        vector<Error> whileErrors = whileStmt(current, symtable, fileDump);
         for (Error e : whileErrors) currentErrors.push_back(e);
     }
     else if (nodeType == "EMIT") {
@@ -929,17 +929,17 @@ vector<Error> Grammar::recursiveCheck(Node* current, SymTable &symtable, string 
     }
     else {
         for (Node* child : current->getEdges()) {
-            vector<Error> childErrors = recursiveCheck(child, symtable);
+            vector<Error> childErrors = recursiveCheck(child, symtable, fileDump);
             for (Error e : childErrors) currentErrors.push_back(e);
         }
     }
 }
 
-vector<Error> Grammar::braceStmt(Node* current, SymTable &symtable) {
+vector<Error> Grammar::braceStmt(Node* current, SymTable &symtable, string fileDump) {
     symtable.openScope();
     vector<Error> braceErrors;
     for (Node* child : current->getEdges()) {
-        vector<Error> childErrors = recursiveCheck(child, symtable);
+        vector<Error> childErrors = recursiveCheck(child, symtable, fileDump);
         for (Error e : childErrors) braceErrors.push_back(e);
     }
     symtable.closeScope();
@@ -1068,6 +1068,7 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
         }
         // assign statement
         if (current->getEdges()[1]->getID() == "assign") {
+            string type;
             vector<Error> subAssignErrors = assignStmt(current->getEdges()[1], symtable, type);
             for (Error e : subAssignErrors) assignErrors.push_back(e);
             rhsType = type;
@@ -1077,9 +1078,9 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
     Error convError;
     convError.type = Error::ErrorType::ERROR;
     convError.id = Error::ErrorID::CONV;
-    if (type != rhsType) {
+    if (leftType != rhsType) {
         // check type conversions allowed
-        if (type == "int") {
+        if (leftType == "int") {
             if (rhsType == "string" ||
                 rhsType == "float" ||
                 rhsType == "bool") 
@@ -1087,7 +1088,7 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
                 assignErrors.push_back(convError);
             }
         }
-        else if (type == "float") {
+        else if (leftType == "float") {
             if (rhsType == "int" ||
                 rhsType == "bool" ||
                 rhsType == "string")
@@ -1095,14 +1096,14 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable) {
                 assignErrors.push_back(convError);
             }
         }
-        else if (type == "bool") {
+        else if (leftType == "bool") {
             if (rhsType == "float" ||
                 rhsType == "string")
             {
                 assignErrors.push_back(convError);
             }
         }
-        else if (type == "int") {
+        else if (leftType == "int") {
             if (rhsType == "bool" ||
                 rhsType == "string") 
             {
@@ -1146,12 +1147,12 @@ vector<Error> Grammar::assignStmt(Node* current, SymTable &symtable, string type
         // else rhs is a variable
         else {
             string varName = current->getEdges()[1]->getVal();
-            vector<string> varInfo = symtable.getSymbol(varName)
+            vector<string> varInfo = symtable.getSymbol(varName);
             if (varInfo[0] == "dne") {
                 assignErrors.push_back(noVar);
             }
             else {
-                rightType = varInfo[0];
+                rhsType = varInfo[0];
             }
         }
     }
@@ -1353,23 +1354,24 @@ vector<Error> Grammar::exprStmt(Node* current, SymTable &symtable, string &type)
     return exprErrors;
 }
 
-vector<Error> Grammar::ifStmt(Node* current, SymTable &symtable) {
+vector<Error> Grammar::ifStmt(Node* current, SymTable &symtable, string fileDump) {
     vector<Error> ifErrors;
 
     // lhs is a boolean expr, rhs is a brace statement
     Node* predicate = current->getEdges()[0];
     Node* body = current->getEdges()[1];
 
-    vector<Error> predicateErrors = exprStmt(predicate, symtable);
+    string type;
+    vector<Error> predicateErrors = exprStmt(predicate, symtable, type);
     for (Error e : predicateErrors) ifErrors.push_back(e);
 
-    vector<Error> bodyErrors = braceStmt(body, symtable);
+    vector<Error> bodyErrors = braceStmt(body, symtable, fileDump);
     for (Error e : bodyErrors) ifErrors.push_back(e);
 
     return ifErrors;
 }
 
-vector<Error> Grammar::ifElseStmt(Node* current, SymTable &symtable) {
+vector<Error> Grammar::ifElseStmt(Node* current, SymTable &symtable, string fileDump) {
     vector<Error> ifElseErrors;
 
     // lhs is a boolean expr, rhs is a brace statement
@@ -1377,29 +1379,31 @@ vector<Error> Grammar::ifElseStmt(Node* current, SymTable &symtable) {
     Node* ifBody = current->getEdges()[1];
     Node* elseBody = current->getEdges()[2];
 
-    vector<Error> predicateErrors = exprStmt(predicate, symtable);
+    string type;
+    vector<Error> predicateErrors = exprStmt(predicate, symtable, type);
     for (Error e : predicateErrors) ifElseErrors.push_back(e);
 
-    vector<Error> bodyErrors = braceStmt(ifBody, symtable);
+    vector<Error> bodyErrors = braceStmt(ifBody, symtable, fileDump);
     for (Error e : bodyErrors) ifElseErrors.push_back(e);
 
-    vector<Error> elseErrors = braceStmt(elseBody, symtable);
+    vector<Error> elseErrors = braceStmt(elseBody, symtable, fileDump);
     for (Error e : elseErrors) ifElseErrors.push_back(e);
 
     return ifElseErrors;
 }
 
-vector<Error> Grammar::whileStmt(Node* current, SymTable &symtable) {
+vector<Error> Grammar::whileStmt(Node* current, SymTable &symtable, string fileDump) {
     vector<Error> whileErrors;
 
     // lhs is a boolean expr, rhs is a brace statement
     Node* predicate = current->getEdges()[0];
     Node* body = current->getEdges()[1];
 
-    vector<Error> predicateErrors = exprStmt(predicate, symtable);
+    string type;
+    vector<Error> predicateErrors = exprStmt(predicate, symtable, type);
     for (Error e : predicateErrors) whileErrors.push_back(e);
 
-    vector<Error> bodyErrors = braceStmt(body, symtable);
+    vector<Error> bodyErrors = braceStmt(body, symtable, fileDump);
     for (Error e : bodyErrors) whileErrors.push_back(e);
 
     return whileErrors;
@@ -1468,7 +1472,7 @@ string Grammar::isOperator(string op) {
         op == "geq" ||
         op == "gt")
     {
-        return "BOOLS"
+        return "BOOLS";
     }
 
     return "NO";
