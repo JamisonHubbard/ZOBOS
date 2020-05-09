@@ -1,0 +1,11 @@
+int x = "x";
+float f = 1.0;
+string s;
+bool b;
+s = b = f;
+x = b;
+b = x;
+s = x;
+x = f + int(2);
+b = 2 < 3;
+emit s 0 1;

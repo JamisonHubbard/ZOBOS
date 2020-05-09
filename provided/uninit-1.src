@@ -1,0 +1,9 @@
+int x;
+int y, z = x + 2;
+if ( 0 < x ) { 
+    int j = y;
+    x = 3 + j;
+}
+y = x + 2;
+string m = "must use y, z";
+emit m y z;

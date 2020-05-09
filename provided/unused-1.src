@@ -1,0 +1,16 @@
+int x = 3;
+float j = k = 2.718;
+string m = "the lazy brown fox";
+int mlen = 18;
+while ( x*k > 0 ) {
+    float j = 1000.0001;
+    int q;
+    if ( j > 0 ) {
+        string oops = "iamunused";
+        bool b;
+        emit m 0 mlen;
+        q = 4398;
+    }
+    x = x - 1;
+    q = x;
+}

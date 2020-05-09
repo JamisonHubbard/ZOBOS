@@ -1,0 +1,18 @@
+const float needle = 2.17284738473873;
+int count = guess = 0;
+float haymin = -1000, haymax=+1000;
+
+bool onandon = bool(float(0));
+if ( int(onandon) == float(1) ) {
+    if ( guess < needle ) {
+        haymin = guess;
+    } else if ( guess > needle ) {
+        haymax = guess;
+    } else {
+        onandon = bool(0);
+    }
+    if( float(onandon) == 1 ) {
+        guess = int( (haymax+haymin)/2.0 );
+    }
+}
+

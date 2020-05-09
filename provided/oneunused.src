@@ -1,0 +1,3 @@
+int x = 1;
+string m = "boo";
+emit m 0 x;

@@ -1,0 +1,7 @@
+x = 1;
+int a = b = 3;
+int t, u;
+t = u = w = 2;
+int z = q + 1 * x + -q;
+u = b = a;
+b = t*z;

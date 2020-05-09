@@ -1,0 +1,14 @@
+int x = 3;
+float q, e, d, x = 1;
+string d, e, f;
+f = "i'm ok";
+if( 2 < 6 ) {
+    string x = "this is ok";
+    float x;
+    const bool d = 0 < 1;
+    emit x int(d) 2;
+}
+float q = 3.14;
+q = e = d = 1.0;
+q = q + e + d +x;
+emit f x x;

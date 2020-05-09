@@ -1,0 +1,11 @@
+const float pi = 3.14;
+const int x;
+int i = 0, j = 1, k = 2;
+while( i < 3 + j + k ) {
+    string pi = "3.14";
+    i = i + 1;
+    emit pi 0 4;
+    k = i = x = j;
+}
+x = i + x + int(pi);
+pi = 3.14159;

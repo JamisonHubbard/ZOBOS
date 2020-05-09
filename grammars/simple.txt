@@ -1,0 +1,7 @@
+First(D) = {d, lambda}
+First(B) = {a, c}
+First(S) = {a, c, d}
+
+Follow(D) = {a, c}
+Follow(B) = {c, $}
+Follow(S) = {$, c}
